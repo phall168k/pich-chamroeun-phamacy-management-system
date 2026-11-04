@@ -13,9 +13,9 @@ docker compose up --build -d
 docker compose ps
 ```
 
-- Application: http://localhost:8080
-- API health: http://localhost:8080/api/health
-- API information: http://localhost:8080/api
+- Application: http://localhost:8000
+- API health: http://localhost:8000/api/health
+- API information: http://localhost:8000/api
 - MinIO S3 API: http://localhost:9000
 - MinIO console: http://localhost:9001 (use credentials from `.env`)
 
@@ -42,7 +42,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml ps
 
 The production configuration provides multi-stage builds, Next.js standalone output, non-root application containers, health checks, automatic restarts, bounded logs, and no source mounts. Only Nginx has a published port; MinIO stays on the Docker network. Development and production use different Compose project names and therefore separate data volumes.
 
-The default HTTP listener binds to `127.0.0.1:8080`. Put a TLS-terminating proxy in front of it before public deployment. If your TLS proxy runs on another host or container network, set `HTTP_BIND` appropriately and restrict access to the HTTP port. The included Nginx configuration serves HTTP; certificates are deployment-specific. Configure DNS for `www.pichchamroeun.com` to reach your TLS proxy and preserve the original `Host` header when forwarding to Nginx.
+Production Nginx publishes HTTP on `0.0.0.0:8000`. Allow inbound TCP port `8000` in your server firewall to access `http://202.56.1.104:8000`; requests using the IP redirect to `https://www.pichchamroeun.com`. If an existing `.env.production` sets different values, update it to `HTTP_BIND=0.0.0.0` and `HTTP_PORT=8000`, then recreate Nginx with the production Compose command above. Put a TLS-terminating proxy in front of the application for the HTTPS domain. Set `HTTP_BIND=127.0.0.1` when only a TLS proxy on this host should access the HTTP listener. The included Nginx configuration serves HTTP; certificates are deployment-specific. Configure DNS for `www.pichchamroeun.com` to reach your TLS proxy and preserve the original `Host` header when forwarding to Nginx.
 
 Production Nginx (`nginx/default.conf`) serves the app for `www.pichchamroeun.com`. Requests using a server IP, the bare domain, or another hostname receive a permanent HTTP 308 redirect to `https://www.pichchamroeun.com`, preserving the path and query string. `/healthz` stays available without a redirect for container health checks. Development uses `nginx/development.conf` so localhost and local IP access continue to work. HTTPS must terminate at your TLS proxy; an HTTPS request to an IP needs a successful TLS handshake before any HTTP redirect can occur.
 
